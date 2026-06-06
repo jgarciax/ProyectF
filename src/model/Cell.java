@@ -3,7 +3,7 @@ package model;
 public class Cell {
     private int row;
     private int col;
-    private String rawValue;
+    private String rawValue; // =suma(A1,B1) osea valor bruto
     private String displayValue;
 
     public Cell right;
