@@ -1,94 +1,94 @@
 package model;
 
 public class OrthoMatrix {
-    private Cell[] rowHeaders;
-    private Cell[] colHeaders;
-    private int rows;
-    private int cols;
+    private Cell[] rowHeaderCells;
+    private Cell[] columnHeaderCells;
+    private int rowCount;
+    private int columnCount;
 
     public OrthoMatrix(int rows, int cols) {
-        this.rows = rows;
-        this.cols = cols;
-        rowHeaders = new Cell[rows];
-        colHeaders = new Cell[cols];
+        this.rowCount = rows;
+        this.columnCount = cols;
+        rowHeaderCells = new Cell[rows];
+        columnHeaderCells = new Cell[cols];
 
-        for (int r = 0; r < rows; r++)
-            rowHeaders[r] = new Cell(r, -1);
-        for (int c = 0; c < cols; c++)
-            colHeaders[c] = new Cell(-1, c);
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++)
+            rowHeaderCells[rowIndex] = new Cell(rowIndex, -1);
+        for (int columnIndex = 0; columnIndex < cols; columnIndex++)
+            columnHeaderCells[columnIndex] = new Cell(-1, columnIndex);
     }
 
     public Cell getCell(int row, int col) {
-        if (row < 0 || row >= rows || col < 0 || col >= cols) return null;
+        if (row < 0 || row >= rowCount || col < 0 || col >= columnCount) return null;
 
-        Cell cur = rowHeaders[row].right;
-        while (cur != null) {
-            if (cur.getCol() == col) return cur;
-            if (cur.getCol() > col) break;
-            cur = cur.right;
+        Cell currentCellInRow = rowHeaderCells[row].right;
+        while (currentCellInRow != null) {
+            if (currentCellInRow.getCol() == col) return currentCellInRow;
+            if (currentCellInRow.getCol() > col) break;
+            currentCellInRow = currentCellInRow.right;
         }
         return null;
     }
 
     public Cell getOrCreate(int row, int col) {
-        if (row < 0 || row >= rows || col < 0 || col >= cols) return null;
+        if (row < 0 || row >= rowCount || col < 0 || col >= columnCount) return null;
 
-        Cell existing = getCell(row, col);
-        if (existing != null) return existing;
+        Cell existingCell = getCell(row, col);
+        if (existingCell != null) return existingCell;
 
-        Cell newCell = new Cell(row, col);
+        Cell cellToInsert = new Cell(row, col);
 
         // Insert into row linked list (sorted by col)
-        Cell rowPrev = rowHeaders[row];
-        while (rowPrev.right != null && rowPrev.right.getCol() < col)
-            rowPrev = rowPrev.right;
-        newCell.right = rowPrev.right;
-        rowPrev.right = newCell;
+        Cell previousCellInRow = rowHeaderCells[row];
+        while (previousCellInRow.right != null && previousCellInRow.right.getCol() < col)
+            previousCellInRow = previousCellInRow.right;
+        cellToInsert.right = previousCellInRow.right;
+        previousCellInRow.right = cellToInsert;
 
         // Insert into col linked list (sorted by row)
-        Cell colPrev = colHeaders[col];
-        while (colPrev.down != null && colPrev.down.getRow() < row)
-            colPrev = colPrev.down;
-        newCell.down = colPrev.down;
-        colPrev.down = newCell;
+        Cell previousCellInColumn = columnHeaderCells[col];
+        while (previousCellInColumn.down != null && previousCellInColumn.down.getRow() < row)
+            previousCellInColumn = previousCellInColumn.down;
+        cellToInsert.down = previousCellInColumn.down;
+        previousCellInColumn.down = cellToInsert;
 
-        return newCell;
+        return cellToInsert;
     }
 
     public void setValue(int row, int col, String rawValue, String displayValue) {
-        Cell c = getOrCreate(row, col);
-        if (c != null) {
-            c.setRawValue(rawValue);
-            c.setDisplayValue(displayValue);
+        Cell targetCell = getOrCreate(row, col);
+        if (targetCell != null) {
+            targetCell.setRawValue(rawValue);
+            targetCell.setDisplayValue(displayValue);
         }
     }
 
     public String getDisplayValue(int row, int col) {
-        Cell c = getCell(row, col);
-        return c == null ? "" : c.getDisplayValue();
+        Cell targetCell = getCell(row, col);
+        return targetCell == null ? "" : targetCell.getDisplayValue();
     }
 
     public String getRawValue(int row, int col) {
-        Cell c = getCell(row, col);
-        return c == null ? "" : c.getRawValue();
+        Cell targetCell = getCell(row, col);
+        return targetCell == null ? "" : targetCell.getRawValue();
     }
 
-    public int getRows() { return rows; }
-    public int getCols() { return cols; }
+    public int getRows() { return rowCount; }
+    public int getCols() { return columnCount; }
 
     // Exports to string array for saving
     public String[][] exportToArray() {
-        String[][] data = new String[rows][cols];
-        for (int r = 0; r < rows; r++)
-            for (int c = 0; c < cols; c++)
-                data[r][c] = getRawValue(r, c);
+        String[][] data = new String[rowCount][columnCount];
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++)
+                data[rowIndex][columnIndex] = getRawValue(rowIndex, columnIndex);
         return data;
     }
 
     public void importFromArray(String[][] data, FormulaEngine engine) {
-        for (int r = 0; r < Math.min(rows, data.length); r++)
-            for (int c = 0; c < Math.min(cols, data[r].length); c++)
-                if (data[r][c] != null && !data[r][c].isEmpty())
-                    setValue(r, c, data[r][c], engine.evaluate(data[r][c], this));
+        for (int rowIndex = 0; rowIndex < Math.min(rowCount, data.length); rowIndex++)
+            for (int columnIndex = 0; columnIndex < Math.min(columnCount, data[rowIndex].length); columnIndex++)
+                if (data[rowIndex][columnIndex] != null && !data[rowIndex][columnIndex].isEmpty())
+                    setValue(rowIndex, columnIndex, data[rowIndex][columnIndex], engine.evaluate(data[rowIndex][columnIndex], this));
     }
 }
